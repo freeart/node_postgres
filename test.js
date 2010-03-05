@@ -36,3 +36,10 @@ c.query("select ____ from test limit 1;", function (rows) {
   puts("result3:");
   p(rows);
 });
+
+c.query("select * from test;", function () {
+  c.query("select * from test;", function (row) {
+    puts("result4:");
+    p(rows);
+  });
+});

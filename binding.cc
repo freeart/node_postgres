@@ -228,7 +228,26 @@ class Connection : public EventEmitter {
 
     HandleScope scope;
 
-    const char *s;
+    const char *s = NULL;
+
+    switch(PQtransactionStatus(connection->connection_)) {
+      case PQTRANS_IDLE:
+        s = "OK";
+        break;
+      case PQTRANS_ACTIVE:
+        s = "commandActive";
+        break;
+      case PQTRANS_UNKNOWN:
+        s = "bad";
+        break;
+      case PQTRANS_INTRANS:
+        s = "commandActiveButIdle";
+        break;
+    }
+
+    if(s != NULL) {
+        return scope.Close(String::NewSymbol(s));
+    }
 
     switch (PQstatus(connection->connection_)) {
       case CONNECTION_STARTED: 
