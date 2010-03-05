@@ -15,22 +15,24 @@ c.addListener("close", function (e) {
   }
 });
 
-c.query("select * from test;").addCallback(function (rows) {
+c.query("select * from test;", function (rows) {
   puts("result1:");
   p(rows);
 });
 
-c.query("select * from test limit 1;").addCallback(function (rows) {
+c.query("select * from test limit 1;", function (rows) {
   puts("result2:");
   p(rows);
 });
 
-c.query("select ____ from test limit 1;").addCallback(function (rows) {
+c.query("select ____ from test limit 1;", function (rows) {
+  if (false /* error */ )  {
+    puts("error! "+ e.message);
+    puts("full: "+ e.full);
+    puts("severity: "+ e.severity);
+    c.close();
+    return;
+  }
   puts("result3:");
   p(rows);
-}).addErrback(function (e) {
-  puts("error! "+ e.message);
-  puts("full: "+ e.full);
-  puts("severity: "+ e.severity);
-  c.close();
 });
