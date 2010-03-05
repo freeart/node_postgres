@@ -1,5 +1,7 @@
-process.mixin(GLOBAL, require("sys"));
-var postgres = require("./postgres");
+var postgres = require('./postgres'),
+         sys = require('sys'),
+           p = sys.p,
+        puts = sys.puts;
 
 var c = postgres.createConnection("host=localhost dbname=ryan");
 
@@ -8,28 +10,26 @@ c.addListener("connect", function () {
   puts(c.readyState);
 });
 
-c.addListener("close", function (e) {
+c.addListener("close", function (err) {
   puts("connection closed.");
-  if (e) {
-    puts("error: " + e.message);
-  }
+  if (err) puts("error: " + err.message);
 });
 
-c.query("select * from test;", function (rows) {
+c.query("select * from test;", function (err, rows) {
   puts("result1:");
   p(rows);
 });
 
-c.query("select * from test limit 1;", function (rows) {
+c.query("select * from test limit 1;", function (err, rows) {
   puts("result2:");
   p(rows);
 });
 
-c.query("select ____ from test limit 1;", function (rows) {
-  if (false /* error */ )  {
-    puts("error! "+ e.message);
-    puts("full: "+ e.full);
-    puts("severity: "+ e.severity);
+c.query("select ____ from test limit 1;", function (err, rows) {
+  if (err)  {
+    puts("error! "+ err.message);
+    puts("full: "+ err.full);
+    puts("severity: "+ err.severity);
     c.close();
     return;
   }
@@ -37,8 +37,8 @@ c.query("select ____ from test limit 1;", function (rows) {
   p(rows);
 });
 
-c.query("select * from test;", function () {
-  c.query("select * from test;", function (row) {
+c.query("select * from test;", function (err, rows) {
+  c.query("select * from test;", function (err, rows) {
     puts("result4:");
     p(rows);
   });

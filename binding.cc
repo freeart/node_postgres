@@ -449,8 +449,12 @@ class Connection : public EventEmitter {
 
   void EmitResult (PGresult *result)
   {
+    HandleScope scope;
+
     Local<Value> tuples;
     Local<Value> exception;
+
+    Local<Value> args[2];
 
     switch (PQresultStatus(result)) {
       case PGRES_EMPTY_QUERY:
@@ -459,8 +463,9 @@ class Connection : public EventEmitter {
         break;
 
       case PGRES_TUPLES_OK:
-        tuples = BuildTuples(result);
-        Emit(result_symbol, 1, &tuples);
+        args[0] = Local<Value>::New(Null());
+        args[1] = BuildTuples(result);
+        Emit(result_symbol, 2, args);
         break;
 
       case PGRES_COPY_OUT:

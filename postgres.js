@@ -28,11 +28,13 @@ exports.createConnection = function (conninfo) {
     c.maybeDispatchQuery();
   });
 
-  c.addListener("result", function (arg) {
+  c.addListener("result", function () {
     process.assert(c.currentQuery);
     var callback = c.currentQuery[1];
     c.currentQuery = null;
-    if (callback) callback(arg[0]);
+    if (callback) {
+      callback.apply(c, arguments);
+    }
   });
 
   c.addListener("ready", function () {
