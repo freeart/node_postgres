@@ -3,7 +3,7 @@ var postgres = require('./postgres'),
            p = sys.p,
         puts = sys.puts;
 
-var c = postgres.createConnection("host=localhost dbname=ryan");
+var c = postgres.createConnection("host=localhost dbname=test");
 
 c.addListener("connect", function () {
   puts("connected");

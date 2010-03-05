@@ -4,3 +4,32 @@ or better) and do
   node-waf configure build
 
 
+h2. Getting Started
+
+
+You'll need postgres to run this. Here's the easy way to do this locally:
+
+  wget http://wwwmaster.postgresql.org/redir/198/h/source/v8.4.2/postgresql-8.4.2.tar.gz 
+  tar -zxf postgresql-8.4.2.tar.gz 
+  cd postgresql-8.4.2
+  ./configure --prefix=$HOME/local/postgres-8.4.2 && make && make install
+  cd $HOME/local/postgres-8.4.2
+  bin/initdb ./data
+  bin/postgres -D ./data
+
+You'll probably want to add $HOME/local/postgres-8.4.2/bin to your PATH
+environment variable.
+  
+  export PATH=$HOME/local/postgres-8.4.2/bin:$PATH
+
+And puts few things into the database
+
+  createdb test
+  echo "CREATE TABLE test (a int, b int); INSERT INTO test VALUES (1, 2);" | psql -d test 
+
+  cd ~/src/node_postgres
+  node-waf configure 
+  node-waf build
+  node test.js
+
+
