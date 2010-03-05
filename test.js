@@ -16,11 +16,13 @@ c.addListener("close", function (err) {
 });
 
 c.query("select * from test;", function (err, rows) {
+  if (err) throw err;
   puts("result1:");
   p(rows);
 });
 
 c.query("select * from test limit 1;", function (err, rows) {
+  if (err) throw err;
   puts("result2:");
   p(rows);
 });
