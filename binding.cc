@@ -108,7 +108,7 @@ class Connection : public EventEmitter {
     if (r == 0) {
       return false;
     }
-    if (PQflush(connection_) == 1) ev_io_start(&write_watcher_);
+    if (PQflush(connection_) == 1) ev_io_start(EV_DEFAULT_ &write_watcher_);
     return true;
   }
 
@@ -515,7 +515,7 @@ class Connection : public EventEmitter {
     }
 
     if (revents & EV_WRITE) {
-      if (PQflush(connection_) == 0) ev_io_stop(&write_watcher_);
+      if (PQflush(connection_) == 0) ev_io_stop(EV_DEFAULT_ &write_watcher_);
     }
   }
 
