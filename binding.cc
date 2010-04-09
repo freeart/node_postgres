@@ -3,6 +3,7 @@
 #include <node.h>
 #include <node_events.h>
 #include <assert.h>
+#include <stdlib.h>
 
 using namespace v8;
 using namespace node;
@@ -11,6 +12,7 @@ static Persistent<String> result_symbol;
 static Persistent<String> close_symbol;
 static Persistent<String> connect_symbol;
 #define READY_STATE_SYMBOL String::NewSymbol("readyState")
+#define MAP_TUPLE_ITEMS_SYMBOL String::NewSymbol("mapTupleItems")
 
 class Connection : public EventEmitter {
  public:
@@ -33,8 +35,12 @@ class Connection : public EventEmitter {
     NODE_SET_PROTOTYPE_METHOD(t, "close", Close);
     NODE_SET_PROTOTYPE_METHOD(t, "reset", Reset);
     NODE_SET_PROTOTYPE_METHOD(t, "dispatchQuery", DispatchQuery);
+    NODE_SET_PROTOTYPE_METHOD(t, "escapeString", EscapeString);
 
     t->PrototypeTemplate()->SetAccessor(READY_STATE_SYMBOL, ReadyStateGetter);
+    t->PrototypeTemplate()->SetAccessor(MAP_TUPLE_ITEMS_SYMBOL,
+                                        MapTupleItemsGetter,
+                                        MapTupleItemsSetter);
 
     target->Set(String::NewSymbol("Connection"), t->GetFunction());
   }
@@ -146,6 +152,46 @@ class Connection : public EventEmitter {
   }
 
   static Handle<Value>
+  EscapeString (const Arguments& args)
+  {
+    Connection *connection = ObjectWrap::Unwrap<Connection>(args.This());
+
+    HandleScope scope;
+
+    if (args.Length() == 0 || !args[0]->IsString()) {
+      return ThrowException(Exception::Error(
+            String::New("Must give a string to escape")));
+    }
+
+    String::Utf8Value unescaped_string(args[0]->ToString());
+
+    // the string to be escaped is a raw value and
+    // may contain everything you can imagine
+    int from_len = unescaped_string.length();
+
+    char *to;
+    to = (char *) malloc(from_len * 2 + 1);
+
+    if (connection->connection_) {
+      int *error;
+      // TODO handle an error if set
+      PQescapeStringConn(connection->connection_,
+                         to,
+                         *unescaped_string,
+                         (size_t)from_len,
+                         error);
+    } else {
+      PQescapeString(to, *unescaped_string, (size_t)from_len);
+    }
+
+    Handle<Value> result = String::New(to);
+
+    free(to);
+
+    return scope.Close(result);
+  }
+
+  static Handle<Value>
   Connect (const Arguments& args)
   {
     Connection *connection = ObjectWrap::Unwrap<Connection>(args.This());
@@ -153,7 +199,8 @@ class Connection : public EventEmitter {
     HandleScope scope;
 
     if (args.Length() == 0 || !args[0]->IsString()) {
-      return ThrowException(String::New("Must give conninfo string as argument"));
+      return ThrowException(Exception::Error(
+            String::New("Must give conninfo string as argument")));
     }
 
     String::Utf8Value conninfo(args[0]->ToString());
@@ -216,6 +263,37 @@ class Connection : public EventEmitter {
     }
 
     return Undefined();
+  }
+
+  static Handle<Value>
+  MapTupleItemsGetter (Local<String> property, const AccessorInfo& info)
+  {
+    Connection *connection = ObjectWrap::Unwrap<Connection>(info.This());
+    assert(connection);
+
+    assert(property == MAP_TUPLE_ITEMS_SYMBOL);
+
+    HandleScope scope;
+
+    return scope.Close(Boolean::New(connection->mapTupleItems_));
+  }
+
+  static void
+  MapTupleItemsSetter (Local<String> property,
+                       Local<Value> value,
+                       const AccessorInfo& info)
+  {
+    Connection *connection = ObjectWrap::Unwrap<Connection>(info.This());
+    assert(connection);
+
+    assert(property == MAP_TUPLE_ITEMS_SYMBOL);
+
+    if (!value->IsBoolean()) {
+      ThrowException(Exception::TypeError(
+            String::New("mapTupleItems should be of Boolean value")));
+    }
+
+    connection->mapTupleItems_ = value->ToBoolean()->Value();
   }
 
   static Handle<Value>
@@ -378,16 +456,30 @@ class Connection : public EventEmitter {
     int nrows = PQntuples(result);
     int ncols = PQnfields(result);
     int row_index, col_index;
+    char *field_name;
 
     Local<Array> tuples = Array::New(nrows);
 
-    for (row_index = 0; row_index < nrows; row_index++) {
-      Local<Array> row = Array::New(ncols);
-      tuples->Set(Integer::New(row_index), row);
+    if (mapTupleItems_) {
+      for (row_index = 0; row_index < nrows; row_index++) {
+        Local<Object> row = Object::New();
+        tuples->Set(Integer::New(row_index), row);
 
-      for (col_index = 0; col_index < ncols; col_index++) {
-        Local<Value> cell = BuildCell(result, row_index, col_index); 
-        row->Set(Integer::New(col_index), cell);
+        for (col_index = 0; col_index < ncols; col_index++) {
+          field_name = PQfname(result, col_index);
+          Local<Value> cell = BuildCell(result, row_index, col_index); 
+          row->Set(String::New(field_name), cell);
+        }
+      }
+    } else {
+      for (row_index = 0; row_index < nrows; row_index++) {
+        Local<Array> row = Array::New(nrows);
+        tuples->Set(Integer::New(row_index), row);
+
+        for (col_index = 0; col_index < ncols; col_index++) {
+          Local<Value> cell = BuildCell(result, row_index, col_index); 
+          row->Set(Integer::New(col_index), cell);
+        }
       }
     }
 
@@ -531,6 +623,7 @@ class Connection : public EventEmitter {
   PGconn *connection_;
   bool connecting_;
   bool resetting_;
+  bool mapTupleItems_;
 };
 
 extern "C" void
