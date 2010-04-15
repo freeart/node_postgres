@@ -167,7 +167,7 @@ class Connection : public EventEmitter {
 
     // the string to be escaped is a raw value and
     // may contain everything you can imagine
-    int from_len = unescaped_string.length();
+    int from_len = args[0]->ToString()->Utf8Length();
 
     char *to;
     to = (char *) malloc(from_len * 2 + 1);
