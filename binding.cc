@@ -11,6 +11,7 @@ static Persistent<String> ready_symbol;
 static Persistent<String> result_symbol;
 static Persistent<String> close_symbol;
 static Persistent<String> connect_symbol;
+static Persistent<String> notify_symbol;
 #define READY_STATE_SYMBOL String::NewSymbol("readyState")
 #define MAP_TUPLE_ITEMS_SYMBOL String::NewSymbol("mapTupleItems")
 
@@ -30,6 +31,7 @@ class Connection : public EventEmitter {
     connect_symbol = NODE_PSYMBOL("connect");
     result_symbol = NODE_PSYMBOL("result");
     ready_symbol = NODE_PSYMBOL("ready");
+    notify_symbol = NODE_PSYMBOL("notify");
 
     NODE_SET_PROTOTYPE_METHOD(t, "connect", Connect);
     NODE_SET_PROTOTYPE_METHOD(t, "close", Close);
@@ -576,6 +578,18 @@ class Connection : public EventEmitter {
     }
   }
 
+  void EmitNotify (PGnotify *notify)
+  {
+    HandleScope scope;
+
+    Local<Value> args[3];
+
+    args[0] = Local<Value>::New(String::New(notify->relname));
+    args[1] = Local<Value>::New(Integer::New(notify->be_pid));
+    args[2] = Local<Value>::New(String::New(notify->extra));
+    Emit(notify_symbol, 3, args);
+  }
+
   void Event (int revents)
   {
     if (revents & EV_ERROR) {
@@ -603,7 +617,13 @@ class Connection : public EventEmitter {
           PQclear(result);
         }
         Emit(ready_symbol, 0, NULL);
-      }      
+      }
+
+      PGnotify *notify;
+      while ((notify = PQnotifies(connection_))) {
+        EmitNotify(notify);
+        PQfreemem(notify);
+      }
     }
 
     if (revents & EV_WRITE) {
