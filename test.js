@@ -55,8 +55,6 @@ c.query("select ____ from test limit 1;", function (err, rows) {
     puts("error! "+ err.message);
     puts("full: "+ err.full);
     puts("severity: "+ err.severity);
-    c.close();
-    return;
   }
   puts("result3:");
   p(rows);
@@ -67,4 +65,21 @@ c.query("select * from test;", function (err, rows) {
     puts("result4:");
     p(rows);
   });
+});
+
+c.query("listen testnotice;", function () {
+  var timeout = setTimeout(function () {
+    puts("timeout waiting for notification");
+    c.close();
+  }, 2000);
+
+  c.addListener("notify", function (relname, pid, extras) {
+    if (relname === "testnotice") {
+      puts("got notification from " + pid + ", extras:" + extras);
+      clearTimeout(timeout);
+      c.close();
+    }
+  });
+
+  c.query("notify testnotice;");
 });
