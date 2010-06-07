@@ -175,13 +175,13 @@ class Connection : public EventEmitter {
     to = (char *) malloc(from_len * 2 + 1);
 
     if (connection->connection_) {
-      int *error;
+      int error;
       // TODO handle an error if set
       PQescapeStringConn(connection->connection_,
                          to,
                          *unescaped_string,
                          (size_t)from_len,
-                         error);
+                         &error);
     } else {
       PQescapeString(to, *unescaped_string, (size_t)from_len);
     }
