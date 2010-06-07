@@ -1,7 +1,10 @@
 var postgres = require('./postgres'),
          sys = require('sys'),
-           p = sys.p,
         puts = sys.puts;
+
+var p = function () {
+    puts(sys.inspect.apply(this, arguments));
+}
 
 var c = postgres.createConnection("host='' dbname=test");
 
