@@ -1,4 +1,4 @@
-var binding = require("./binding");
+var binding = require("./build/default/binding");
 
 var Connection = binding.Connection;
 

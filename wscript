@@ -26,12 +26,3 @@ def build(bld):
   obj.source = "binding.cc"
   obj.uselib = "PG"
 
-
-def shutdown():
-  # HACK to get binding.node out of build directory.
-  # better way to do this?
-  if Options.commands['clean']:
-    if exists('binding.node'): unlink('binding.node')
-  else:
-    if exists('build/default/binding.node') and not exists('binding.node'):
-      symlink('build/default/binding.node', 'binding.node')

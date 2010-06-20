@@ -1,5 +1,7 @@
-{ "name" : "node_postgres"
+{ "name" : "postgres"
 , "version" : "0.0.1"
 , "description" : "very basic libpg binding to node"
 , "author": "Ryan Dahl"
+, "main": "./postgres"
+
 }
