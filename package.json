@@ -3,5 +3,5 @@
 , "description" : "very basic libpg binding to node"
 , "author": "Ryan Dahl"
 , "main": "./postgres"
-
+, "scripts": { "install": "node-waf configure build" }
 }
