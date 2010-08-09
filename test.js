@@ -86,3 +86,13 @@ c.query("listen testnotice;", function () {
 
   c.query("notify testnotice;");
 });
+
+c.query("select * from test;", function (err, rows) {
+  for(var i = 0; i < rows.length; i++) {
+    var currentrow = rows[i];
+    c.query("select * from test;", function(err, rows, related) {
+      puts(related); // row from the iteration
+      puts(rows); // rows from the query
+    }, currentrow);
+  }
+});

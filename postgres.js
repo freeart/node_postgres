@@ -17,7 +17,7 @@ Connection.prototype.maybeDispatchQuery = function () {
 
 Connection.prototype.query = function (sql, callback) {
   this._queries = this._queries || [];
-  this._queries.push([sql, callback]);
+  this._queries.push([sql, callback, arguments]);
   this.maybeDispatchQuery();
 };
 
@@ -31,9 +31,18 @@ exports.createConnection = function (conninfo) {
   c.addListener("result", function () {
     process.assert(c.currentQuery);
     var callback = c.currentQuery[1];
+    var args = Array.prototype.slice.call(c.currentQuery[2]);
+    args.shift();
+    args.shift();
     c.currentQuery = null;
     if (callback) {
-      callback.apply(c, arguments);
+      var newArgs = Array.prototype.slice.call(arguments);
+
+      for(var i = 0; i < args.length; i++) {
+        newArgs.push(args[i]);
+      }
+
+      callback.apply(c, newArgs);
     }
   });
 
