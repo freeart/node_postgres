@@ -29,7 +29,7 @@ exports.createConnection = function (conninfo) {
   });
 
   c.addListener("result", function () {
-    process.assert(c.currentQuery);
+	require("assert").ok(c.currentQuery);
     var callback = c.currentQuery[1];
     var args = Array.prototype.slice.call(c.currentQuery[2]);
     args.shift();
